@@ -1,33 +1,33 @@
 import pandas as pd
-from sklearn import metrics
-from sklearn import tree
+from sklearn import model_selection
 import config
 
 
-def run(fold):
-    # Read the training data with folds
+def create_folds(num_folds):
+    # Load in initial training data
     df = pd.read_csv(config.TRAINING_FILE)
 
-    # Training data is where kfold is not equal to current fold
-    # also, note that we reset the index
-    df_train = df[df.kfold != fold].reset_index(drop=True)
+    # Shuffle dataset rows
+    df = df.sample(frac=1).reset_index(drop=True)
 
-    # Validation data is where kfold is equal to fold
-    df_valid = df[df.kfold == fold].reset_index(drop=True)
+    # Create a new column for kfolds and fill it with -1
+    df["kfold"] = -1
 
-    # Drop the label column and convert to numpy array using .values
-    x_train = df_train.drop("labels", axis=1).values
-    y_train = df_train.labels.values
+    # Fetch targets
+    y = df.label.values
 
-    x_valid = df_valid.drop("labels", axis=1).values
-    y_valid = df.valid.labels.values
+    # Initiate kfold class from model selection
+    kf = model_selection.StratifiedKFold(n_splits=num_folds)
 
-    # Initialize simple decision tree classifier from SKLearn
-    clf = tree.DecisionTreeClassifier()
+    # Fill in new kfold col
+    for kfold, (train_indices, validation_indices) in enumerate(kf.split(X=df, y=y)):
+        print(f"kfold: {kfold}")
+        print(f"train_indices: {validation_indices}")
+        df.loc[validation_indices, "kfold"] = kfold
 
-    # Fit model on training data
-    clf.fit(x_train, y_train)
+    # Save training data input with folds
+    df.to_csv(config.TRAINING_FILE_KFOLD, index=False)
 
-    # Create predictions from validation samples
-    preds = clf.predict(x_valid)
 
+if __name__ == "__main__":
+    create_folds(num_folds=5)
