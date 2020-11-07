@@ -3,9 +3,14 @@ import joblib
 from sklearn import metrics
 from sklearn import tree
 import config
+import model_dispatcher
+import click
 
 
-def run(fold):
+@click.command()
+@click.option("--model", default="decision_tree_gini", help="Which model to use")
+@click.option("--fold", default=1, help="Which kfold to use")
+def run(fold, model):
     # Read the training data with folds
     df = pd.read_csv(config.TRAINING_FILE_KFOLD)
 
@@ -24,7 +29,7 @@ def run(fold):
     y_valid = df_valid.label.values
 
     # Initialize simple decision tree classifier from SKLearn
-    clf = tree.DecisionTreeClassifier()
+    clf = model_dispatcher.models[model]
 
     # Fit model on training data
     clf.fit(x_train, y_train)
@@ -42,8 +47,4 @@ def run(fold):
 
 
 if __name__ == "__main__":
-    run(fold=0)
-    run(fold=1)
-    run(fold=2)
-    run(fold=3)
-    run(fold=4)
+    run()
